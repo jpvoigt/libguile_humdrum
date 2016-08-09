@@ -11,5 +11,6 @@
   (define-void-function (sym file)(symbol? string?)
     (ly:parser-define! sym
       `((description . "To be done")
-        (file . ,file)))
+        (file . ,file)
+        (lily . ,(convert-humdrum sym (ly:gulp-file file)))))
     ))

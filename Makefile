@@ -8,7 +8,7 @@ LIBDIRS   = -Lexternal/humlib/lib
 GUILE     = guile
 HUMLIB    = humlib
 PREFLAGS  = -O3 -Wall -std=c++11 $(INCDIRS)
-POSTFLAGS = $(LIBDIRS) -shared -fPIC -l$(GUILE) 
+POSTFLAGS = $(LIBDIRS) -shared -fPIC -l$(GUILE) -l$(HUMLIB)
 
 .PHONY: external
 

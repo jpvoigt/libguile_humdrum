@@ -4,4 +4,4 @@
 \convertHumdrum mysong "chor001.krn"
 
 
-#(display mysong)
+#(ly:parser-include-string (assoc-get 'lily mysong))

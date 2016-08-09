@@ -1,6 +1,7 @@
 #ifndef __hum2ly_h__
 #define __hum2ly_h__
 
+#define _USE_HUMLIB_OPTIONS_
 #include "humlib.h"
 
 namespace hum {
