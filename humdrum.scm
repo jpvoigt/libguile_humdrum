@@ -6,3 +6,10 @@
   (ly:message "load-extension \"~A\" ... " libguile_humdrum.so)
   (load-extension libguile_humdrum.so "scm_init_humdrum_module")
   )
+
+(define-public convertHumdrum
+  (define-void-function (sym file)(symbol? string?)
+    (ly:parser-define! sym
+      `((description . "To be done")
+        (file . ,file)))
+    ))
