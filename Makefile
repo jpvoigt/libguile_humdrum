@@ -4,10 +4,10 @@
 
 CXX=g++
 CXXFLAGS=
-LDFLAGS=-shared -fPIC
+LDFLAGS=-shared -fPIC -lguile
 
 ALL: libguile_humdrum.so
 	
 
 libguile_humdrum.so: libguile_humdrum.cpp
-	g++ libguile_humdrum.cpp -o libguile_humdrum.so $(CXXFLAGS) $(LDFLAGS)
+	$(CXX) libguile_humdrum.cpp -o libguile_humdrum.so $(CXXFLAGS) $(LDFLAGS)

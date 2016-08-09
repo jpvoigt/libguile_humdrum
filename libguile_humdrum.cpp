@@ -1,20 +1,15 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <dlfcn.h>
+#include <iostream>
 #include <libguile.h>
 
-#ifndef false
-#define false 0
-#endif
-#ifndef true
-#define true 1
-#endif
+using namespace std;
 
 extern "C" void init_humdrum (void *unused)
 {
-	puts("HumDrum importer V0");
+	cerr << "HumDrum importer V0" << endl << endl;
+/*	
+	scm_c_define_gsubr ("make-jvm", 2, 0, 0, (SCM (*)()) make_jvm);
+	scm_c_export ("make-jvm", NULL);
+*/
 }
 
 extern "C" void scm_init_humdrum_module ()
