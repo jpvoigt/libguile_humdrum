@@ -1,6 +1,16 @@
+## Licence:	GPLv3
+## Programmer:	Jan-Peter Voigt
+##
+## libguile_humdrum
+## ================
+##
+## guile-module to provide functions for humdrum file handling
+##
+
+
 # first version running on linux
-# mac version should produce *.dylib
-# win version should produce *.dll
+# TODO: mac version should produce *.dylib
+# TODO: win version should produce *.dll
 
 CXX=g++
 INCDIRS   = -Iexternal/humlib/include 
@@ -13,7 +23,6 @@ POSTFLAGS = $(LIBDIRS) -shared -fPIC -l$(GUILE) -l$(HUMLIB)
 .PHONY: external
 
 ALL: external libguile_humdrum.so
-	
 
 libguile_humdrum.so: libguile_humdrum.cpp hum2ly.o
 	$(CXX) $(PREFLAGS) libguile_humdrum.cpp hum2ly.o -o libguile_humdrum.so $(POSTFLAGS)

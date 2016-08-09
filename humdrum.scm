@@ -12,5 +12,5 @@
     (ly:parser-define! sym
       `((description . "To be done")
         (file . ,file)
-        (lily . ,(convert-humdrum sym (ly:gulp-file file)))))
+        (lily . ,(convert-humdrum-file file))))
     ))
