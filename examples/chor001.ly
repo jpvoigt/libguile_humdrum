@@ -5,3 +5,5 @@
 
 
 #(ly:parser-include-string (assoc-get 'lily mysong))
+
+#(ly:message "~A" (assoc-get 'lily mysong))
