@@ -1,17 +1,17 @@
 //
-// Programmer:	Craig Stuart Sapp <craig@ccrma.stanford.edu>
+// Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  6 10:53:40 CEST 2016
-// Last Modified: Sat Aug  6 10:53:43 CEST 2016
-// Filename:	  Convert-string.h
-// URL:	       https://github.com/craigsapp/hum2ly/blob/master/hum2ly.h
-// Syntax:	    C++11
-// vim:	       ts=3 noexpandtab
+// Last Modified: Tue Aug  9 13:20:54 CEST 2016
+// Filename:      hum2ly.cpp
+// URL:           https://github.com/craigsapp/hum2ly/blob/master/hum2ly.cpp
+// Syntax:        C++11
+// vim:           ts=3 noexpandtab
 //
-// Description:   Converts a Humdrum file into a lilypond file.
+// Description:   Convert a Humdrum file into a lilypond file.
 //
 
-#define _USE_HUMLIB_OPTIONS_
 #include "hum2ly.h"
+
 #include <iostream>
 #include <math.h>
 
@@ -19,60 +19,19 @@ using namespace std;
 
 namespace hum {
 
+
+//////////////////////////////
+//
+// StateVariables::clear -- Reset state variables (such as when starting
+//    conversion of a new part.
+//
+
 void StateVariables::clear(void) {
 	duration = -1;
 	dots = -1;
 	pitch = -99999;
+	chordpitches.clear();
 }
-
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-/*
-#define _INCLUDE_HUM2LY_MAIN_
-#ifdef _INCLUDE_HUM2LY_MAIN_
-
-int main(int argc, char** argv) {
-	hum::Options options;
-	options.define("v|version=s:2.18.2", "lilypond version");
-	options.process(argc, argv);
-
-	hum::HumdrumFile infile;
-	if (options.getArgCount() == 0) {
-		infile.read(cin);
-	} else {
-		infile.read(options.getArg(1));
-	}
-
-	hum::HumdrumToLilypondConverter converter;
-	converter.setOptions(argc, argv);
-	stringstream out;
-	bool status = converter.convert(out, infile);
-	if (status) {
-		cout << out.str();
-	}
-
-	exit(0);
-}
-*/
-// #endif /* _INCLUDE_HUM2LY_MAIN_ */
-
-///////////////////////////////////////////////////////////////////////////
-
-
-namespace hum {
-
-
-//////////////////////////////
-//
-// HumdumToLilypondConverter::setOptions --
-//
-
-void HumdrumToLilypondConverter::setOptions(int argc, char** argv) {
-	m_options.process(argc, argv);
-}
-
 
 
 
@@ -82,7 +41,11 @@ void HumdrumToLilypondConverter::setOptions(int argc, char** argv) {
 //
 
 HumdrumToLilypondConverter::HumdrumToLilypondConverter(void) {
-	m_options.define("v|version=s:2.18.2", "lilypond version");
+	Options& options = m_options;
+
+	options.define("v|version=s:2.18.2", "lilypond version");
+	options.define("k|kern=b", "display corresponding **kern data");
+
 	m_indent = "  ";
 }
 
@@ -119,16 +82,20 @@ bool HumdrumToLilypondConverter::convert(ostream& out) {
 
 	printHeaderComments(tempout);
 
-	tempout << "\\version \"" << m_options.getString("version") << "\"\n\n";
+	string version = m_options.getString("version");
+	if (version != "") {
+		tempout << "\\version \"" << m_options.getString("version") << "\"\n\n";
+	}
 
 	printHeader(tempout);
 
 	// Create a list of the parts and which spine represents them.
 	vector<HTp>& kernstarts = m_kernstarts;
 	kernstarts = infile.getKernSpineStartList();
-
 	if (kernstarts.size() == 0) {
 		// no parts in file, give up.  Perhaps return an error.
+		addErrorMessage("Error: no **kern spines to convert");
+		status = false;
 		return status;
 	}
 
@@ -176,7 +143,7 @@ bool HumdrumToLilypondConverter::convert(ostream& out) {
 
 //////////////////////////////
 //
-// HumdrumToLilypondConverter::printHeader --
+// HumdrumToLilypondConverter::printHeader -- Print the lilypond \header.
 //
 
 void HumdrumToLilypondConverter::printHeader(ostream& tempout) {
@@ -230,9 +197,9 @@ void HumdrumToLilypondConverter::extractSegments(void) {
 
 //////////////////////////////
 //
-// HumdrumToLilypondConverter::printHeaderComments --
+// HumdrumToLilypondConverter::printHeaderComments -- Print Humdrum reference
+//      records and global comments which occur before the first data line.
 //
-
 
 void HumdrumToLilypondConverter::printHeaderComments(ostream& out) {
 	HumdrumFile& infile = m_infile;
@@ -240,22 +207,12 @@ void HumdrumToLilypondConverter::printHeaderComments(ostream& out) {
 	int count = 0;
 	bool starting;
 	for (int i=0; i<infile.getLineCount(); i++) {
-		if (infile[i].isData()) {
-			break;
-		}
-		if (infile[i].isBarline()) {
-			break;
-		}
-		if (infile[i].isInterpretation() && !infile[i].isExclusive()) {
-			break;
-		}
-		if (infile[i].hasSpines()) {
-			continue;
-		}
+		if (infile[i].isData()) { break; }
+		if (infile[i].isBarline()) { break; }
+		if (infile[i].isInterpretation() && !infile[i].isExclusive()) { break; }
+		if (infile[i].hasSpines()) { continue; }
 		token = *infile[i].token(0);
-		if (token.size() == 0) {
-			continue;
-		}
+		if (token.size() == 0) { continue; }
 		starting = true;
 		count++;
 		for (int j=0; j<(int)token.size(); j++) {
@@ -277,7 +234,8 @@ void HumdrumToLilypondConverter::printHeaderComments(ostream& out) {
 
 //////////////////////////////
 //
-// HumdrumToLilypondConverter::printFooterComments --
+// HumdrumToLilypondConverter::printFooterComments -- Print Humdrum reference
+//      records and global comments which occur after the last data line.
 //
 
 void HumdrumToLilypondConverter::printFooterComments(ostream& out) {
@@ -288,22 +246,12 @@ void HumdrumToLilypondConverter::printFooterComments(ostream& out) {
 	string token;
 	bool starting;
 	for (int i=infile.getLineCount()-1; i>0; i--) {
-		if (infile[i].isData()) {
-			break;
-		}
-		if (infile[i].isBarline()) {
-			break;
-		}
-		if (infile[i].isInterpretation() && (infile[i] != "*-")) {
-			break;
-		}
-		if (infile[i].hasSpines()) {
-			continue;
-		}
+		if (infile[i].isData()) { break; }
+		if (infile[i].isBarline()) { break; }
+		if (infile[i].isInterpretation() && (infile[i] != "*-")) { break; }
+		if (infile[i].hasSpines()) { continue; }
 		token = *infile[i].token(0);
-		if (token.size() == 0) {
-			continue;
-		}
+		if (token.size() == 0) { continue; }
 		starting = true;
 		for (int j=0; j<(int)token.size(); j++) {
 			if (starting && (token[j] == '!')) {
@@ -321,7 +269,6 @@ void HumdrumToLilypondConverter::printFooterComments(ostream& out) {
 		out << tout.str();
 	}
 }
-
 
 
 
@@ -1285,7 +1232,50 @@ void HumdrumToLilypondConverter::printErrorMessages(ostream& out) {
 
 
 
-}  // namespace hum
+//////////////////////////////
+//
+// HumdumToLilypondConverter::setOptions --
+//
+
+void HumdrumToLilypondConverter::setOptions(int argc, char** argv) {
+	m_options.process(argc, argv);
+}
+
+
+void HumdrumToLilypondConverter::setOptions(const vector<string>& argvlist) {
+	int tempargc = (int)argvlist.size();
+	char* tempargv[tempargc+1];
+	tempargv[tempargc] = NULL;
+	
+	int i;
+	for (i=0; i<tempargc; i++) {
+		tempargv[i] = new char[argvlist[i].size() + 1];
+		strcpy(tempargv[i], argvlist[i].c_str());
+	}
+
+	setOptions(tempargc, tempargv);
+
+	for (i=0; i<tempargc; i++) {
+		if (tempargv[i] != NULL) {
+			delete [] tempargv[i];
+		}
+	}
+}
+
+
+//////////////////////////////
+//
+// HumdrumToLilypondConverter::getOptionDefinitions -- Used to avoid
+//   duplicating the definitions in the test main() function.
+//
+
+Options HumdrumToLilypondConverter::getOptionDefinitions (void) {
+	return m_options;
+}
+
+
+
+}  // end of namespace hum
 
 
 
