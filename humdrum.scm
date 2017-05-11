@@ -14,3 +14,10 @@
         (file . ,file)
         (lily . ,(convert-humdrum-file file))))
     ))
+
+(define-public scoreHumdrum
+  (define-void-function (file)(string?)
+    (let ((ly (convert-humdrum-file file)))
+      (if (and (string? ly)(> (string-length ly) 0))
+          (ly:parser-include-string ly))
+      )))
