@@ -1,0 +1,3 @@
+[submodule "external/humlib"]
+	path = external/humlib
+	url = https://github.com/craigsapp/humlib.git
